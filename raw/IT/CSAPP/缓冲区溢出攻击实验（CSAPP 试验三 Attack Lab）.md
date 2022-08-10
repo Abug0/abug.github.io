@@ -239,8 +239,6 @@ Disassembly of section .text:
 
 ![image-20220808213859401](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213859.png)
 
-从图中可以看到，执行到断点处时，rsp，即栈顶地址为0x5561dc78，这个地址也就是输入字符串的存储地址，自然也是注入代码的地址。
-
 那么getbuf的返回地址也就是要替换为0x5561dc78即可，结合前面注入代码的是十六进制表示，最终可以得到整个输入字符串的十六进制表示：
 
 ```shell
@@ -325,6 +323,8 @@ c3 00 00 00 00 00 00 00
 执行：
 
 ![image-20220809180142844](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208091801966.png)
+=======
+
 
 ROP(phase 1)
 
