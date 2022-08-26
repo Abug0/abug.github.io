@@ -30,7 +30,7 @@ unsigned getbuf()
 
 ```
 
-Gets类似于库函数gets，它会从标准输入读取字符串（“\n”作为结尾）存储到buf中，且不会检查缓冲区和字符串的长度，因而存在缓冲区溢出漏洞。
+Gets类似于库函数gets，它会从标准输入读取字符串（“\n”作为结尾）存储到buf中，且不会检查缓冲区和字符串的长度，因此存在缓冲区溢出漏洞。
 
 getbuf会在test中被调用：
 
@@ -55,7 +55,7 @@ ctarget和rtarget的使用：
 >
 > -i FILE: Supply input from a file, rather than from standard input
 
-使用带上-q参数以避免远程服务器校验。
+使用时带上-q参数以避免远程服务器校验。
 
 
 
@@ -133,12 +133,14 @@ void touch3(char *sval)
 
 ### Part 2： Return-Oriented Programming
 
-
-
 目标程序是rtarget，与ctarge相比，其特点是：
 
 * 栈空间地址是随机的
 * 栈不可执行
+
+ROP的原理是利用堆栈来控制返回地址，让进程跳转到精心挑选的指令或指令片段处，而这些指令或指令片段往往是已存在于程序代码段的，故而可以绕过ALSR和DEP。
+
+在rtarget中，可供利用的gadget都在start_farm和end_farm之间。
 
 #### Phase 4: getbuf执行后去调用touch2;
 
@@ -192,9 +194,9 @@ ctarget -q -i attack1raw.txt
 
 这次需要调用touch2，从源码可以看到，需要将cookie作为参数传递进去。
 
-回忆一下，汇编中传递参数的方式：寄存器和栈，会依次使用rdi,rsi等寄存器传递参数，更多的参数会使用栈来进行传递。
+回忆一下，汇编中传递参数的方式：寄存器和栈，会依次使用rdi、rsi、rdx、rcx、r8、r9等寄存器传递参数，更多的参数会使用栈来进行传递。
 
-所以此处传参只需要在调用touch2前将cookie放入寄存器rdi中即可。
+那么此处传参只需要在调用touch2前将cookie放入寄存器rdi中即可。
 
 所以此处需要做的是：
 
@@ -206,10 +208,6 @@ ctarget -q -i attack1raw.txt
 * 栈地址固定
 * 栈可执行
 
-那么想到一种方法：通过所以思路整理为：
-
-* 控制返回地址
-
 于是想到可以直接注入代码到栈上，通过注入代码操控寄存器的值，如此只需将返回地址修改为注入代码的地址、然后在注入代码中跳转touch2即可。
 
 写出注入代码：
@@ -217,10 +215,10 @@ ctarget -q -i attack1raw.txt
 ```assembly
 mov $0x59b997fa, %rdi	;cookie存入rdi
 push $0x4017ec			;touch2指令的地址入栈, 通过ret跳转到touch2
-ret
+ret						;跳转到touch2
 ```
 
-编译这段代码，然后反汇编得到对应的十六进制串：
+编译这段代码，然后反汇编得到对应的十六进制表示：
 
 ```shell
 [root@machine target1]# gcc attack.s -c
@@ -245,7 +243,7 @@ Disassembly of section .text:
 
 ![image-20220808213859401](https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213859.png)
 
-那么getbuf的返回地址也就是要替换为0x5561dc78即可，结合前面注入代码的是十六进制表示，最终可以得到整个输入字符串的十六进制表示：
+可以看到栈顶地址为0x5561dc78，结合前面注入代码的是十六进制表示，最终可以得到整个输入字符串的十六进制表示：
 
 ```shell
 48 c7 c7 fa 97 b9 59 68 
@@ -269,7 +267,7 @@ ctarget -q -i attack2raw.txt
 
 ### CI(phase 3)
 
-分析touch3的代码可以发现，touch3与touch2类似，仍旧是需要将cookie作为参数传递进去，但不同之处在于，touch2的参数类型为unsigned int，因此直接传递cookie本身即可，但touch3的参数类型为char *，需要将一个地址作为参数传递，并且需要将cookie转换为对应的ascii码。
+分析touch3的代码可以发现，touch3与touch2类似，仍旧是需要将cookie作为参数传递进去，但不同之处在于，touch2的参数类型为unsigned int，因此直接传递cookie本身即可，但touch3的参数类型为char *，需要将一个地址作为参数传递，而且touch3中进行的是字符串比较，而非数字类型的比较，所以还需要将cookie转换为对应的ascii码。
 
 目前需要做的是：
 
@@ -455,3 +453,15 @@ ec 17 40 00 00 00 00 00
 （暂未完成）
 
 ## 参考文章
+
+[attacklab.pdf](http://csapp.cs.cmu.edu/3e/attacklab.pdf)
+
+[Introduction to CSAPP（二十）：这可能是你能找到的最具捷径的attacklab了](https://zhuanlan.zhihu.com/p/104340864)
+
+[CSAPP：Attack Lab —— 缓冲区溢出攻击实验](https://blog.csdn.net/qq_36894564/article/details/72863319)
+
+[64位linux系统：栈溢出+ret2libc ROP attack](https://www.superweb999.com/article/1005924.html)
+
+[缓冲区溢出：攻防对抗](https://github.com/YuZhang/Security-Courseware/blob/master/buffer-overflow/buffer-overflow-3.md)
+
+[rop链攻击原理与思路(x86/x64)](https://bbs.pediy.com/thread-257238.htm)
