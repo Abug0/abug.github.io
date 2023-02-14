@@ -11,15 +11,6 @@ tags:
 ---
 
 ---
-title: "MySQL常用操作"
-isCJKLanguage: true
-date: 2021-08-03 11:09:10
-categories: 
-- IT
-- MySQL
-tags: 
-- MySQL
----
 
 # MySQL常用操作
 
@@ -32,7 +23,7 @@ tags:
   show databases;
   
   show tables;
-  ```
+```
 {%endspoiler%}
 
   
@@ -42,7 +33,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   desc table_name;
-  ```
+```
 {%endspoiler%}
 
   
@@ -52,7 +43,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   show index from table_name;
-  ```
+```
 {%endspoiler%}
 
   
@@ -62,7 +53,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   explain sql_stat;
-  ```
+```
 {%endspoiler%}
 
   
@@ -72,7 +63,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   alter table table_name add column column_name varchar(10);
-  ```
+```
 {%endspoiler%}
 
 * 添加索引
@@ -80,7 +71,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   alter table ttt add index idx_t1(name, num);
-  ```
+```
 {%endspoiler%}
 
 * 查看和修改事务隔离级别
@@ -91,9 +82,9 @@ tags:
   select @@session.transaction_isolation;
   
   set global|session transaction isolation level REPEATABLE READ|READ COMMITTED|READ UNCOMMITTED|SERIALIZABLE;
-  ```
+```
 {%endspoiler%}
-  
+
   [官网文档: 13.3.7 SET TRANSACTION 语句](https://dev.mysql.com/doc/refman/8.0/en/set-transaction.html)
 
 * 查看建表语句
@@ -101,7 +92,7 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   show create table table_name;
-  ```
+```
 {%endspoiler%}
 
 * 查看版本
@@ -109,5 +100,5 @@ tags:
   {%spoiler 示例代码%}
 ```mysql
   show variables like "%version%";
-  ```
+```
 {%endspoiler%}
