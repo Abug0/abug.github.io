@@ -1,5 +1,5 @@
 ---
-title: "事务"
+title: "MySQL-事务"
 isCJKLanguage: true
 date: 2021-11-28 20:35:41
 updated: 2021-11-28 20:35:41
