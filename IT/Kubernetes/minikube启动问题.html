@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.abug0.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"gitalk","storage":true,"lazyload":false,"nav":{"gitalk":{"text":"gitalk(github评论)","order":-2},"valine":{"text":"匿名评论(Anonymous)","order":-1}},"activeClass":"gitalk"},"algolia":{"appID":"V8S440A7R6","apiKey":"5f18489120f06717c74217be61ca3feb","indexName":"abug0","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="minikube启动问题1、dashboard外部访问如下，开启dashboard后，只监听了本地地址： 12345678910[root@centos02-01-ssd ~]# minikube dashboard* Enabling dashboard ...  - Using image docker.io&#x2F;kubernetesui&#x2F;dashboard:v2.7.0  - Using ima">
+<meta property="og:type" content="article">
+<meta property="og:title" content="abug0的博客">
+<meta property="og:url" content="https://www.abug0.com/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html">
+<meta property="og:site_name" content="abug0的博客">
+<meta property="og:description" content="minikube启动问题1、dashboard外部访问如下，开启dashboard后，只监听了本地地址： 12345678910[root@centos02-01-ssd ~]# minikube dashboard* Enabling dashboard ...  - Using image docker.io&#x2F;kubernetesui&#x2F;dashboard:v2.7.0  - Using ima">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20230411203910.png">
+<meta property="article:published_time" content="2023-06-04T14:20:22.317Z">
+<meta property="article:modified_time" content="2023-06-04T14:20:22.317Z">
+<meta property="article:author" content="abug0">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20230411203910.png">
+
+<link rel="canonical" href="https://www.abug0.com/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title> | abug0的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?dfa0fbb598015665cff81cbb01b109d3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">abug0的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Simple is Beautiful.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">18</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">23</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">57</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.abug0.com/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="abug0">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="abug0的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-06-04 14:20:22" itemprop="dateCreated datePublished" datetime="2023-06-04T14:20:22+00:00">2023-06-04</time>
+            </span>
+
+          
+            <span id="/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html" class="post-meta-item leancloud_visitors" data-flag-title="" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/IT/Kubernetes/minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>14k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>13 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="minikube启动问题"><a href="#minikube启动问题" class="headerlink" title="minikube启动问题"></a>minikube启动问题</h1><h2 id="1、dashboard外部访问"><a href="#1、dashboard外部访问" class="headerlink" title="1、dashboard外部访问"></a>1、dashboard外部访问</h2><p>如下，开启dashboard后，只监听了本地地址：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@centos02-01-ssd ~]# minikube dashboard</span><br><span class="line">* Enabling dashboard ...</span><br><span class="line">  - Using image docker.io/kubernetesui/dashboard:v2.7.0</span><br><span class="line">  - Using image docker.io/kubernetesui/metrics-scraper:v1.0.8</span><br><span class="line">* Some dashboard features require the metrics-server addon. To enable all features please run:</span><br><span class="line">	minikube addons enable metrics-server	</span><br><span class="line">* Verifying dashboard health ...</span><br><span class="line">* Launching proxy ...</span><br><span class="line">* Verifying proxy health ...</span><br><span class="line">http://127.0.0.1:38987/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/</span><br></pre></td></tr></table></figure>
+
+<p>此时可开启代理：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@centos02-01-ssd ~]# kubectl proxy --address=&#x27;0.0.0.0&#x27; --disable-filter=true</span><br><span class="line">W0410 19:37:57.675250  126941 proxy.go:175] Request filter disabled, your proxy is vulnerable to XSRF attacks, please be cautious</span><br><span class="line">Starting to serve on [::]:8001</span><br></pre></td></tr></table></figure>
+
+<p>替换ip和端口后即可访问：</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20230411203910.png" alt="image-20230411203903032"></p>
+<h2 id="2、metrics-server问题"><a href="#2、metrics-server问题" class="headerlink" title="2、metrics-server问题"></a>2、metrics-server问题</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@centos02-01-ssd ~]# kubectl get pods</span><br><span class="line">E0410 02:41:01.509557   41565 memcache.go:255] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 02:41:01.664696   41565 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 02:41:01.732327   41565 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 02:41:01.757328   41565 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">No resources found in default namespace.</span><br></pre></td></tr></table></figure>
+
+<p>执行get pod来查找命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods -n kube-system</span><br></pre></td></tr></table></figure>
+
+<p>结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">E0410 11:32:34.128252   79846 memcache.go:255] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:32:34.129985   79846 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:32:34.132637   79846 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:32:34.134949   79846 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">NAME                               READY   STATUS         RESTARTS        AGE</span><br><span class="line">coredns-787d4945fb-cmx6d           1/1     Running        6 (5h43m ago)   24d</span><br><span class="line">etcd-minikube                      1/1     Running        4 (5h43m ago)   24d</span><br><span class="line">kindnet-8bdq4                      1/1     Running        9 (113m ago)    24d</span><br><span class="line">kube-apiserver-minikube            1/1     Running        7 (112m ago)    24d</span><br><span class="line">kube-controller-manager-minikube   1/1     Running        9 (5h42m ago)   24d</span><br><span class="line">kube-proxy-dtpnk                   1/1     Running        3 (8h ago)      24d</span><br><span class="line">kube-scheduler-minikube            1/1     Running        6 (5h43m ago)   24d</span><br><span class="line">metrics-server-5f8fcc9bb7-7cvll    0/1     ErrImagePull   0               15m</span><br><span class="line">storage-provisioner                1/1     Running        15              24d</span><br></pre></td></tr></table></figure>
+
+<p>进一步describle命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe pod metrics-server-5f8fcc9bb7-7cvll -n kube-system</span><br></pre></td></tr></table></figure>
+
+<p>结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line">E0410 11:33:11.602283   79887 memcache.go:255] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:33:11.629565   79887 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:33:11.633242   79887 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">E0410 11:33:11.635276   79887 memcache.go:106] couldn&#x27;t get resource list for metrics.k8s.io/v1beta1: the server is currently unable to handle the request</span><br><span class="line">Name:                 metrics-server-5f8fcc9bb7-7cvll</span><br><span class="line">Namespace:            kube-system</span><br><span class="line">Priority:             2000000000</span><br><span class="line">Priority Class Name:  system-cluster-critical</span><br><span class="line">Service Account:      metrics-server</span><br><span class="line">Node:                 minikube/192.168.49.2</span><br><span class="line">Start Time:           Mon, 10 Apr 2023 11:16:47 +0800</span><br><span class="line">Labels:               k8s-app=metrics-server</span><br><span class="line">                      pod-template-hash=5f8fcc9bb7</span><br><span class="line">Annotations:          &lt;none&gt;</span><br><span class="line">Status:               Pending</span><br><span class="line">IP:                   10.244.0.10</span><br><span class="line">IPs:</span><br><span class="line">  IP:           10.244.0.10</span><br><span class="line">Controlled By:  ReplicaSet/metrics-server-5f8fcc9bb7</span><br><span class="line">Containers:</span><br><span class="line">  metrics-server:</span><br><span class="line">    Container ID:  </span><br><span class="line">    Image:         registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2</span><br><span class="line">    Image ID:      </span><br><span class="line">    Port:          4443/TCP</span><br><span class="line">    Host Port:     0/TCP</span><br><span class="line">    Args:</span><br><span class="line">      --cert-dir=/tmp</span><br><span class="line">      --secure-port=4443</span><br><span class="line">      --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname</span><br><span class="line">      --kubelet-use-node-status-port</span><br><span class="line">      --metric-resolution=60s</span><br><span class="line">      --kubelet-insecure-tls</span><br><span class="line">    State:          Waiting</span><br><span class="line">      Reason:       ImagePullBackOff</span><br><span class="line">    Ready:          False</span><br><span class="line">    Restart Count:  0</span><br><span class="line">    Requests:</span><br><span class="line">      cpu:        100m</span><br><span class="line">      memory:     200Mi</span><br><span class="line">    Liveness:     http-get https://:https/livez delay=0s timeout=1s period=10s #success=1 #failure=3</span><br><span class="line">    Readiness:    http-get https://:https/readyz delay=0s timeout=1s period=10s #success=1 #failure=3</span><br><span class="line">    Environment:  &lt;none&gt;</span><br><span class="line">    Mounts:</span><br><span class="line">      /tmp from tmp-dir (rw)</span><br><span class="line">      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-9rlrp (ro)</span><br><span class="line">Conditions:</span><br><span class="line">  Type              Status</span><br><span class="line">  Initialized       True </span><br><span class="line">  Ready             False </span><br><span class="line">  ContainersReady   False </span><br><span class="line">  PodScheduled      True </span><br><span class="line">Volumes:</span><br><span class="line">  tmp-dir:</span><br><span class="line">    Type:       EmptyDir (a temporary directory that shares a pod&#x27;s lifetime)</span><br><span class="line">    Medium:     </span><br><span class="line">    SizeLimit:  &lt;unset&gt;</span><br><span class="line">  kube-api-access-9rlrp:</span><br><span class="line">    Type:                    Projected (a volume that contains injected data from multiple sources)</span><br><span class="line">    TokenExpirationSeconds:  3607</span><br><span class="line">    ConfigMapName:           kube-root-ca.crt</span><br><span class="line">    ConfigMapOptional:       &lt;nil&gt;</span><br><span class="line">    DownwardAPI:             true</span><br><span class="line">QoS Class:                   Burstable</span><br><span class="line">Node-Selectors:              &lt;none&gt;</span><br><span class="line">Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s</span><br><span class="line">                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s</span><br><span class="line">Events:</span><br><span class="line">  Type     Reason     Age                   From               Message</span><br><span class="line">  ----     ------     ----                  ----               -------</span><br><span class="line">  Normal   Scheduled  16m                   default-scheduler  Successfully assigned kube-system/metrics-server-5f8fcc9bb7-7cvll to minikube</span><br><span class="line">  Warning  Failed     15m                   kubelet            Failed to pull image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: rpc error: code = Unknown desc = failed to pull and unpack image &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to resolve reference &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to do request: Head &quot;https://registry.k8s.io/v2/metrics-server/metrics-server/manifests/sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: dial tcp: lookup registry.k8s.io on 192.168.49.1:53: read udp 192.168.49.2:45360-&gt;192.168.49.1:53: i/o timeout</span><br><span class="line">  Warning  Failed     14m                   kubelet            Failed to pull image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: rpc error: code = Unknown desc = failed to pull and unpack image &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to resolve reference &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to do request: Head &quot;https://registry.k8s.io/v2/metrics-server/metrics-server/manifests/sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: dial tcp: lookup registry.k8s.io on 192.168.49.1:53: read udp 192.168.49.2:46766-&gt;192.168.49.1:53: i/o timeout</span><br><span class="line">  Warning  Failed     13m                   kubelet            Failed to pull image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: rpc error: code = Unknown desc = failed to pull and unpack image &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to resolve reference &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to do request: Head &quot;https://registry.k8s.io/v2/metrics-server/metrics-server/manifests/sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: dial tcp: lookup registry.k8s.io on 192.168.49.1:53: read udp 192.168.49.2:36366-&gt;192.168.49.1:53: i/o timeout</span><br><span class="line">  Normal   Pulling    12m (x4 over 16m)     kubelet            Pulling image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;</span><br><span class="line">  Warning  Failed     12m (x4 over 15m)     kubelet            Error: ErrImagePull</span><br><span class="line">  Warning  Failed     12m                   kubelet            Failed to pull image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: rpc error: code = Unknown desc = failed to pull and unpack image &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to resolve reference &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to do request: Head &quot;https://registry.k8s.io/v2/metrics-server/metrics-server/manifests/sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: dial tcp: lookup registry.k8s.io on 192.168.49.1:53: read udp 192.168.49.2:32960-&gt;192.168.49.1:53: i/o timeout</span><br><span class="line">  Warning  Failed     11m (x6 over 15m)     kubelet            Error: ImagePullBackOff</span><br><span class="line">  Normal   BackOff    6m13s (x25 over 15m)  kubelet            Back-off pulling image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;</span><br><span class="line">  Warning  Failed     52s                   kubelet            Failed to pull image &quot;registry.k8s.io/metrics-server/metrics-server:v0.6.2@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: rpc error: code = Unknown desc = failed to pull and unpack image &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to resolve reference &quot;registry.k8s.io/metrics-server/metrics-server@sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: failed to do request: Head &quot;https://registry.k8s.io/v2/metrics-server/metrics-server/manifests/sha256:f977ad859fb500c1302d9c3428c6271db031bb7431e7076213b676b345a88dc2&quot;: dial tcp: lookup registry.k8s.io on 192.168.49.1:53: read udp 192.168.49.2:39894-&gt;192.168.49.1:53: i/o timeout</span><br></pre></td></tr></table></figure>
+
+<p>此时在dashboard上也可看到ImagePullBackOff。</p>
+<p>所以很明显是由于无法访问registry.k8s.io，从而拉取不到metrics-server:v0.6.2镜像导致。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>1、手动拉取镜像，见参考链接（实操由于minikube虚拟机无法访问外网故而放弃）；</p>
+<p>2、VMWare虚拟机（minikube所在的宿主机）配置代理，通过物理机代理访问外网，删除minikube虚拟机，重新启动即可（这一步重新enable metrics-server应该就可以了…未证实过）。</p>
+<p>完成后重新执行命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@centos02-01-ssd ~]# kubectl cluster-info</span><br><span class="line">Kubernetes control plane is running at https://192.168.76.2:8443</span><br><span class="line">CoreDNS is running at https://192.168.76.2:8443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy</span><br><span class="line">To further debug and diagnose cluster problems, use &#x27;kubectl cluster-info dump&#x27;.</span><br><span class="line"></span><br><span class="line">[root@centos02-01-ssd ~]# kubectl top pods</span><br><span class="line">No resources found in default namespace.</span><br><span class="line"></span><br><span class="line">[root@centos02-01-ssd ~]# kubectl get pods</span><br><span class="line">No resources found in default namespace.</span><br></pre></td></tr></table></figure>
+
+<h2 id="3、重启minikube出错"><a href="#3、重启minikube出错" class="headerlink" title="3、重启minikube出错"></a>3、重启minikube出错</h2><p>执行delete后，start出错：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">[root@centos02-01-ssd ~]# minikube delete --all</span><br><span class="line">[root@centos02-01-ssd ~]# minikube start --force</span><br><span class="line">* minikube v1.29.0 on Centos 7.9.2009</span><br><span class="line">! minikube skips various validations when --force is supplied; this may lead to unexpected behavior</span><br><span class="line"></span><br><span class="line">* Automatically selected the docker driver. Other choices: ssh, none</span><br><span class="line">* The &quot;docker&quot; driver should not be used with root privileges. If you wish to continue as root, use --force.</span><br><span class="line">* If you are running minikube within a VM, consider using --driver=none:</span><br><span class="line">*   https://minikube.sigs.k8s.io/docs/reference/drivers/none/</span><br><span class="line">* Using Docker driver with root privileges</span><br><span class="line">* Starting control plane node minikube in cluster minikube</span><br><span class="line">* Pulling base image ...</span><br><span class="line">    &gt; gcr.io/k8s-minikube/kicbase...:  39.51 MiB / 407.19 MiB  9.70% 80.63 KiB </span><br><span class="line">    &gt; gcr.io/k8s-minikube/kicbase...:  39.51 MiB / 407.19 MiB  9.70% 89.25 KiB </span><br><span class="line">    &gt; gcr.io/k8s-minikube/kicbase...:  80.54 MiB / 407.19 MiB  19.78% 365.52 Ki</span><br><span class="line">! minikube was unable to download gcr.io/k8s-minikube/kicbase:v0.0.37, but successfully downloaded docker.io/kicbase/stable:v0.0.37 as a fallback image</span><br><span class="line">* Creating docker container (CPUs=2, Memory=2200MB) ...| E0410 19:30:18.021902  115247 network_create.go:112] error while trying to create docker network minikube 192.168.67.0/24: create docker network minikube 192.168.67.0/24 with gateway 192.168.67.1 and MTU of 1500: docker network create --driver=bridge --subnet=192.168.67.0/24 --gateway=192.168.67.1 -o --ip-masq -o --icc -o com.docker.network.driver.mtu=1500 --label=created_by.minikube.sigs.k8s.io=true --label=name.minikube.sigs.k8s.io=minikube minikube: exit status 1</span><br><span class="line">stdout:</span><br><span class="line"></span><br><span class="line">stderr:</span><br><span class="line">Error response from daemon: Failed to Setup IP tables: Unable to enable SKIP DNAT rule:  (iptables failed: iptables --wait -t nat -I DOCKER -i br-1528d16c7c9d -j RETURN: iptables: No chain/target/match by that name.</span><br><span class="line"> (exit status 1))                                                                                                                                                                                 </span><br><span class="line">! Unable to create dedicated network, this might result in cluster IP change after restart: un-retryable: create docker network minikube 192.168.67.0/24 with gateway 192.168.67.1 and MTU of 1500: docker network create --driver=bridge --subnet=192.168.67.0/24 --gateway=192.168.67.1 -o --ip-masq -o --icc -o com.docker.network.driver.mtu=1500 --label=created_by.minikube.sigs.k8s.io=true --label=name.minikube.sigs.k8s.io=minikube minikube: exit status 1</span><br><span class="line">stdout:</span><br><span class="line"></span><br><span class="line">stderr:</span><br><span class="line">Error response from daemon: Failed to Setup IP tables: Unable to enable SKIP DNAT rule:  (iptables failed: iptables --wait -t nat -I DOCKER -i br-1528d16c7c9d -j RETURN: iptables: No chain/target/match by that name.</span><br><span class="line"> (exit status 1))</span><br><span class="line"></span><br><span class="line">! StartHost failed, but will try again: creating host: create: creating: create kic node: create container: docker run -d -t --privileged --security-opt seccomp=unconfined --tmpfs /tmp --tmpfs /run -v /lib/modules:/lib/modules:ro --hostname minikube --name minikube --label created_by.minikube.sigs.k8s.io=true --label name.minikube.sigs.k8s.io=minikube --label role.minikube.sigs.k8s.io= --label mode.minikube.sigs.k8s.io=minikube --volume minikube:/var --security-opt apparmor=unconfined --memory=2200mb --cpus=2 -e container=docker --expose 8443 --publish=127.0.0.1::8443 --publish=127.0.0.1::22 --publish=127.0.0.1::2376 --publish=127.0.0.1::5000 --publish=127.0.0.1::32443 docker.io/kicbase/stable:v0.0.37@sha256:8bf7a0e8a062bc5e2b71d28b35bfa9cc862d9220e234e86176b3785f685d8b15: exit status 125</span><br><span class="line">stdout:</span><br><span class="line">79fd5fd76c6f6c51655dcb038239f1de6e48fd853db0db4584933faa71502979</span><br><span class="line">stderr:</span><br><span class="line">docker: Error response from daemon: driver failed programming external connectivity on endpoint minikube (222ce95cbdd7c0d070b9556fe085ff0795be9ab18424a265060638dbf0f9a0be):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 127.0.0.1 --dport 32812 -j DNAT --to-destination 172.17.0.3:32443 ! -i docker0: iptables: No chain/target/match by that name.</span><br><span class="line"> (exit status 1)).</span><br><span class="line"></span><br><span class="line">* docker &quot;minikube&quot; container is missing, will recreate.</span><br></pre></td></tr></table></figure>
+
+<p>此时重启一下docker服务即可。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://www.mls-tech.info/microservice/k8s/minikube-use-metrics-server/">处理安装 metrics-server 时出现的 ImagePullBackOff 错误</a></p>
+<p><a target="_blank" rel="noopener" href="https://juejin.cn/post/7166878805766701092">minikube安装k8s过程中ImagePullBackOff问题处理</a></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/IT/Kubernetes/kubelet%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html" rel="prev" title="kubelet启动问题">
+      <i class="fa fa-chevron-left"></i> kubelet启动问题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/IT/Kubernetes/k8s%E9%9B%86%E7%BE%A4%E5%AE%89%E8%A3%85.html" rel="next" title="k8s集群安装">
+      k8s集群安装 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="comment-button-group">
+          <a class="btn comment-button gitalk">gitalk(github评论)</a>
+          <a class="btn comment-button valine">匿名评论(Anonymous)</a>
+      </div>
+        <div class="comment-position gitalk">
+          <div class="comments" id="gitalk-container"></div>
+        </div>
+        <div class="comment-position valine">
+          <div class="comments" id="valine-comments"></div>
+        </div>
+      <script>
+        (function() {
+          let commentButton = document.querySelectorAll('.comment-button');
+            commentButton.forEach(element => {
+            let commentClass = element.classList[2];
+            element.addEventListener('click', () => {
+              commentButton.forEach(rmActive => rmActive.classList.remove('active'));
+              element.classList.add('active');
+              document.querySelectorAll('.comment-position').forEach(rmActive => rmActive.classList.remove('active'));
+              document.querySelector(`.comment-position.${commentClass}`).classList.add('active');
+              if (CONFIG.comments.storage) {
+                localStorage.setItem('comments_active', commentClass);
+              }
+            });
+          });
+          let { activeClass } = CONFIG.comments;
+          if (CONFIG.comments.storage) {
+            activeClass = localStorage.getItem('comments_active') || activeClass;
+          }
+          if (activeClass) {
+            let activeButton = document.querySelector(`.comment-button.${activeClass}`);
+            if (activeButton) {
+              activeButton.click();
+            }
+          }
+        })();
+      </script>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#minikube%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">minikube启动问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81dashboard%E5%A4%96%E9%83%A8%E8%AE%BF%E9%97%AE"><span class="nav-number">1.1.</span> <span class="nav-text">1、dashboard外部访问</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81metrics-server%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.</span> <span class="nav-text">2、metrics-server问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">1.2.1.</span> <span class="nav-text">解决方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E9%87%8D%E5%90%AFminikube%E5%87%BA%E9%94%99"><span class="nav-number">1.3.</span> <span class="nav-text">3、重启minikube出错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.4.</span> <span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">abug0</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-book-open"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">abug0</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">265k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">4:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+  <div class="addthis_inline_share_toolbox">
+    <script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-6105212924a623f6" async="async"></script>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '40ec7d9233a147cef660',
+      clientSecret: '414cf059b7655d5e8a124b78961ca81378149a03',
+      repo        : 'gitalk-comments',
+      owner       : 'abug0',
+      admin       : ['abug0'],
+      id          : 'cb75fd253a34be480b0414e5603c2f46',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : true,
+      appId      : 'DkAmD8PHRf2jESEBV3Ght5TX-gzGzoHsz',
+      appKey     : 'OTTHxhSv4aPOg8I21witBRTh',
+      placeholder: "请在此留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

