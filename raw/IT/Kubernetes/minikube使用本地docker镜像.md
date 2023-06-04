@@ -1,0 +1,1 @@
+[两种在Minikube中运行本地Docker镜像的简单方式](https://www.cnblogs.com/xiao2/p/16047455.html)
